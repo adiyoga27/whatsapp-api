@@ -1,6 +1,6 @@
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from '@adiwajshing/baileys'
 import { Boom } from '@hapi/boom'
-import MAIN_LOGGER from '../utils/logger'
+import MAIN_LOGGER from './src/utils/logger'
 import * as fs from 'fs'
 var pm2 = require('pm2');
 require('dotenv').config()
