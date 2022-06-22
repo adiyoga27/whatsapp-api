@@ -2,7 +2,9 @@ import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBa
 import { Boom } from '@hapi/boom'
 import MAIN_LOGGER from '../utils/logger'
 import * as fs from 'fs'
+var pm2 = require('pm2');
 require('dotenv').config()
+const axios = require("axios");
 
 const socketIO = require('socket.io')
 const process2 = require('process');
@@ -85,6 +87,7 @@ const connectToWhatsApp = async () => {
                 if(connection === 'close') {
                     if((lastDisconnect.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut) {
                         connectToWhatsApp()
+                        
                     }
                 }
               
@@ -155,9 +158,10 @@ const connectToWhatsApp = async () => {
 				    fs.unlinkSync("./baileys_store_multi.json");
                 }
 				fs.rmSync("./baileys_auth_info", { recursive: true, force: true });
-				socket.emit('isdelete', '<h2 class="text-center text-info mt-4">Logout Success, Lets Scan Again, Scan Waiting 2-5 Menit<h2>')
-			} else {
-				socket.emit('isdelete', '<h2 class="text-center text-danger mt-4">You are have not Login yet!!<h2>')
+				socket.emit('isdelete', '<h2 class="text-center text-info mt-4">Logout Berhasil, Silahakan Refresh dan tunggu 15-30 detik untuk dapat melakukan broadcast<h2>')
+                restartPm2();
+            } else {
+				socket.emit('isdelete', '<h2 class="text-center text-danger mt-4">Kamu belum melakukan scan, Scan terlebih dahulu!!<h2>')
 			}
 		})
 
@@ -201,6 +205,27 @@ const connectToWhatsApp = async () => {
 
 
     //API EXPRESS JS
+
+    app.get("/v2/check-connection", async (req, res) =>  {
+        
+        fs.readdir('./baileys_auth_info', function(err, data) {
+             
+            if (data.length == 0 || err) {
+
+                return res.status(200).json({
+                    status: false,
+                    message: user.name + " : Disconnected"
+                });
+            }else{
+                return res.status(200).json({
+                    status: true,
+                    message: user.name + " : Connected"
+                });
+            }
+        })
+
+    });
+
     // send message
     app.post('/v2/send-message', [
         body('number').notEmpty(),
@@ -228,14 +253,148 @@ const connectToWhatsApp = async () => {
                 response: response
             });
         }).catch(err => {
+            if(err.output.statusCode === 428){
+                restartPm2();
+            }
             return res.status(500).json({
                 status: false,
                 response: err
             });
         });
     });
+
+    
+	// send media
+	app.post('/v2/send-media', [
+		body('number').notEmpty(),
+		body('url').notEmpty(),
+		body('filetype').notEmpty(),
+	], async (req, res) => {
+		const errors = validationResult(req).formatWith(({
+			msg
+		}) => {
+			return msg;
+		});
+		if (!errors.isEmpty()) {
+			return res.status(422).json({
+				status: false,
+				message: errors.mapped()
+			});
+		}
+		const getBuffer = async (url, options = {}) => {
+			try {
+				options ? options : {}
+				const res = await axios({
+					method: "get",
+					url,
+					...options,
+					responseType: 'arraybuffer'
+				})
+				return res.data
+			} catch (e) {
+				console.log(`Error : ${e}`)
+			}
+		}
+			const number = phoneNumberFormatter(req.body.number);
+			const url = req.body.url;
+			const filetype = req.body.filetype;
+			const filename = req.body.filename;
+			const caption = req.body.caption;
+			if (filetype == 'jpg' || filetype == 'jpeg' || filetype == 'png') {
+	
+					const buffer = await getBuffer(url)
+					await sock.sendMessage(
+						number, 
+						{ 
+							image: {url: url},
+							caption: caption,
+							
+						}
+					).then(response => {
+						return res.status(200).json({
+							status: true,
+							response: response
+						});
+					}).catch(err => {
+                        if(err.output.statusCode === 428){
+                            restartPm2();
+                        }
+						return res.status(500).json({
+							status: false,
+							response: err
+						});
+						console.log('gagal')
+					});
+		
+				}else if(filetype == 'mp4' || filetype == '3gp' || filetype == 'mkv'){
+					const buffer = await getBuffer(url)
+					await sock.sendMessage(
+						number, 
+						{ 
+							video: {url: url},
+							caption: caption,
+							
+						}
+					).then(response => {
+                        
+						return res.status(200).json({
+							status: true,
+							response: response
+						});
+					}).catch(err => {
+                        if(err.output.statusCode === 428){
+                            restartPm2();
+                        }
+						return res.status(500).json({
+							status: false,
+							response: err
+						});
+						console.log('gagal')
+					});
+				}else if(filetype == 'mp3'){
+					const buffer = await getBuffer(url)
+					await sock.sendMessage(
+						number, 
+						{ 
+							audio: {url: url},
+							caption: caption,
+							
+						}
+					).then(response => {
+						return res.status(200).json({
+							status: true,
+							response: response
+						});
+					}).catch(err => {
+                        if(err.output.statusCode === 428){
+                            restartPm2();
+                        }
+
+						return res.status(500).json({
+							status: false,
+							response: err
+						});
+					});
+				}
+			
+		});
 }
 connectToWhatsApp()
 
+
+function restartPm2() {
+	pm2.connect(function (err) {
+		if (err) {
+			console.log(err)
+		}
+
+		pm2.restart(configs.app_name, function (err, apps) {
+			if (err) {
+				console.log(err)
+			}
+			pm2.disconnect();
+		});
+	});
+}
 
 module.exports = app;
