@@ -12,6 +12,8 @@ const qrcode = require('qrcode');
 const configs = {
     app_name: process2.env.APP_NAME,
     port: process2.env.APP_PORT,// custom port to access server
+    app_socket: process2.env.APP_SOCKET,// custom port to access server
+
 };
 const { body, validationResult } = require('express-validator')
 const { phoneNumberFormatter } = require('../helper/formatter')
@@ -20,9 +22,25 @@ const express = require('express'),
     app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+let server;
+if(configs.app_socket === 'https'){
+// Certificate
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/wabot.galkasoft.id/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/wabot.galkasoft.id/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/wabot.galkasoft.id/chain.pem', 'utf8');
 
-var http = require('http')
-const server = http.createServer(app)
+const credentials = {
+	key: privateKey,
+	cert: certificate,
+	ca: ca
+};
+
+ server = http.createServer(credentials, app);
+}else{
+    var http = require('http')
+     server = http.createServer(app)
+    
+}
 
 const io = socketIO(server, {
     cors: {
@@ -30,7 +48,7 @@ const io = socketIO(server, {
     }
 });
 server.listen(configs.port, () => {
-    console.log('\x1b[33m%s\x1b[0m', `Server listening on ` + configs.port);
+    console.log('\x1b[33m%s\x1b[0m', `Server listening on `+ configs.app_socket+" / "+ configs.port);
 });
 
 

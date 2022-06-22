@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-        name: "JCC-2734",
+        name: "JCC-3000",
         script: "npm",
         automation: false,
         args: "start",
