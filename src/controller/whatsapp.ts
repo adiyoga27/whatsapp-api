@@ -1,6 +1,6 @@
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from '@adiwajshing/baileys'
 import { Boom } from '@hapi/boom'
-import MAIN_LOGGER from './src/utils/logger'
+import MAIN_LOGGER from '../utils/logger'
 import * as fs from 'fs'
 var pm2 = require('pm2');
 require('dotenv').config()
@@ -94,7 +94,9 @@ const connectToWhatsApp = async () => {
     io.on("connection", function (socket) {
         sock.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect, qr,isNewLogin } = update
-                console.log('\x1b[33m%s\x1b[0m', 'connection ', connection, ', reconnecting : ',isNewLogin)
+            
+            
+            console.log('\x1b[33m%s\x1b[0m', 'connection ', connection, ', reconnecting : ',isNewLogin)
             
             if (connection === 'open') {
                 io.emit('authenticated', "Hai,  "+user.name + "( "+ user.id +")")
