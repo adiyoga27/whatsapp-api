@@ -1,6 +1,7 @@
 import makeWASocket, { AnyMessageContent, delay, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, MessageRetryMap, useMultiFileAuthState } from '@adiwajshing/baileys'
 import { Boom } from '@hapi/boom'
 import MAIN_LOGGER from '../utils/logger'
+import { emergecyLog, infoLog } from '../services/telegramServices'
 import * as fs from 'fs'
 var pm2 = require('pm2');
 require('dotenv').config()
@@ -50,6 +51,7 @@ const io = socketIO(server, {
 });
 server.listen(configs.port, () => {
     console.log('\x1b[33m%s\x1b[0m', `Server listening on `+ configs.app_socket+" / "+ configs.port);
+    infoLog(`Server listening on `+ configs.app_socket+" / "+ configs.port);
 });
 
 
@@ -172,6 +174,7 @@ const connectToWhatsApp = async () => {
         socket.on('logout', () => {
             console.log('\x1b[33m%s\x1b[0m', '=== socket logout ===')
 			if (fs.existsSync("./baileys_auth_info")) {
+                infoLog('Logout Account')
                 if (fs.existsSync("./baileys_auth_info.json")) {
 				    fs.unlinkSync("./baileys_auth_info.json");
                 }
@@ -232,8 +235,10 @@ const connectToWhatsApp = async () => {
         fs.readdir('./baileys_auth_info', function(err, data) {
              
             if (data.length == 0 || err) {
+                emergecyLog('Account Disconnected')
 
                 return res.status(200).json({
+                    
                     status: false,
                     message: user.name + " : Disconnected"
                 });
@@ -274,6 +279,8 @@ const connectToWhatsApp = async () => {
                 response: response
             });
         }).catch(err => {
+            emergecyLog(err)
+
             if(err.output.statusCode === 428){
                 restartPm2();
             }
@@ -337,6 +344,8 @@ const connectToWhatsApp = async () => {
 							response: response
 						});
 					}).catch(err => {
+            emergecyLog(err)
+
                         if(err.output.statusCode === 428){
                             restartPm2();
                         }
@@ -363,6 +372,8 @@ const connectToWhatsApp = async () => {
 							response: response
 						});
 					}).catch(err => {
+            emergecyLog(err)
+
                         if(err.output.statusCode === 428){
                             restartPm2();
                         }
@@ -387,6 +398,8 @@ const connectToWhatsApp = async () => {
 							response: response
 						});
 					}).catch(err => {
+            emergecyLog(err)
+
                         if(err.output.statusCode === 428){
                             restartPm2();
                         }
@@ -406,13 +419,19 @@ connectToWhatsApp()
 function restartPm2() {
 	pm2.connect(function (err) {
 		if (err) {
+            emergecyLog(err)
+
 			console.log(err)
 		}
 
 		pm2.restart(configs.app_name, function (err, apps) {
 			if (err) {
+                emergecyLog(err)
+
 				console.log(err)
 			}
+            emergecyLog("Application Restart")
+
 			pm2.disconnect();
 		});
 	});
