@@ -58,12 +58,12 @@ server.listen(configs.port, () => {
 
 const logger = MAIN_LOGGER.child({})
 // logger.level = 'trace'
-logger.level = 'silent'
+logger.level = 'trace'
 
 
 
 const useStore = !process.argv.includes('--no-store')
-const doReplies = !process.argv.includes('--no-reply')
+// const doReplies = !process.argv.includes('--no-reply')
 const msgRetryCounterMap: MessageRetryMap = {}
 
 // the store maintains the data of the WA connection in memory
@@ -96,10 +96,10 @@ const connectToWhatsApp = async () => {
     // =================== SOCKET IO =================================
     io.on("connection", function (socket) {
         sock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect, qr,isNewLogin } = update
+            const { connection, lastDisconnect, qr } = update
             
             
-            console.log('\x1b[33m%s\x1b[0m', 'connection ', connection, ', reconnecting : ',isNewLogin)
+            // console.log('\x1b[33m%s\x1b[0m', 'connection ', connection, ', reconnecting : ',isNewLogin)
             
             if (connection === 'open') {
                 io.emit('authenticated', "Hai,  "+user.name + "( "+ user.id +")")
@@ -109,6 +109,10 @@ const connectToWhatsApp = async () => {
                 
                 if(connection === 'close') {
                     if((lastDisconnect.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut) {
+                         emergecyLog('Logout Account')
+                       
+                        restartPm2();
+
                         connectToWhatsApp()
                         
                     }
