@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@adiwajshing/baileys": "^4.2.0",
+    "@adiwajshing/baileys": "^4.4.0",
     "axios": "^0.27.2",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
@@ -8,7 +8,7 @@
     "node-telegram-logger": "^1.3.4",
     "pm2": "^5.2.0",
     "process": "^0.11.10",
-    "qrcode": "^1.5.0",
+    "qrcode": "^1.5.1",
     "socket.io": "^4.5.1",
     "typescript": "^4.7.4",
     "winston": "^3.0.0-rc3",
@@ -28,9 +28,9 @@
   "devDependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@types/express": "^4.17.13",
-    "@typescript-eslint/eslint-plugin": "^5.29.0",
-    "@typescript-eslint/parser": "^5.29.0",
-    "eslint": "^8.18.0",
+    "@typescript-eslint/eslint-plugin": "^5.33.1",
+    "@typescript-eslint/parser": "^5.33.1",
+    "eslint": "^8.22.0",
     "eslint-config-google": "^0.14.0",
     "qrcode-terminal": "^0.12.0"
   }
